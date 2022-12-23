@@ -5,8 +5,9 @@ const app = express();
 
 app.use(express.json())
 app.use(metriker({
+  format: ':method :url Content-Length :res[content-length] - :response-time ms',
   callback: (data) => {
-    console.log(data);
+    console.log(data[':method']);
   }
 }));
 

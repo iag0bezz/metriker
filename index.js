@@ -2,7 +2,7 @@
 
 /**
  * @author Iago Beserra
- * @link https://linkedin.com/<ill-check-later>
+ * @link https://linkedin.com/in/iago-beserra-71747317a/
  * @link https://github.com/iag0bezz
  * @description A simple morgan based response profiling and metrics
  * 
@@ -61,11 +61,32 @@ const MAPPER = {
     return request.headers['user-agent'];
   },
   // I need to refactor this section
-  ':res[content-length]': function getResponseContentLength (request, response) {
-    const header = response.getHeader('content-length');
+  ':res': function getResponse (request, response) {
+    const request_header = request._request_header;
+
+    if (!request_header) {
+      return;
+    }
+
+    const header = response.getHeader(request_header);
 
     if (!header) {
-      return 0;
+      return '';
+    }
+
+    return Array.isArray(header) ? header.join(',') : header
+  },
+  ':req': function getRequest (request, response) {
+    const request_header = request._request_header;
+
+    if (!request_header) {
+      return;
+    }
+
+    const header = request.getHeader(request_header);
+
+    if (!header) {
+      return '';
     }
 
     return Array.isArray(header) ? header.join(',') : header
@@ -100,18 +121,22 @@ function metriker(options) {
     function log() { 
       let text = format;
 
+      let callbackObject = {};
+
       format.split(' ').forEach(
         (value) => {
-          const fn = MAPPER[value];
+          const [name, fn] = parseRequest(value, request);
 
           if (fn) {
+            callbackObject[name] = fn(request, response);
+
             text = text.replace(value, fn(request, response));
           }
         }
       )
 
       if (callback) {
-        callback();
+        callback(callbackObject);
       }
       
       output.write(text + '\n')
@@ -122,6 +147,22 @@ function metriker(options) {
 
     next();
   }
+}
+
+function parseRequest (value, request) {
+  if (/:([-\w]{2,})(?:\[([^\]]+)\])?/g.test(value)) {
+    const exec = /:([-\w]{2,})(?:\[([^\]]+)\])?/g.exec(value);
+
+    const fn = MAPPER[`:${exec[1]}`];
+
+    if (exec[2] !== undefined) {
+      request._request_header = exec[2];
+    }
+
+    return [value, fn];
+  }
+
+  return [value, undefined];
 }
 
 function initializeTimer() {
