@@ -24,7 +24,7 @@ const MAPPER = {
     return String(response.statusCode);
   },
   ':response-time': function getResponseTime (request, response) {
-    if (!request._startedAt || !request._currentTime) {
+    if (!request._startedAt || !response._startedAt) {
       return;
     }
 
@@ -115,7 +115,13 @@ function metriker(options) {
     if (blacklist.includes(request.originalUrl || request.url)) {
       return;
     }
+
+    request._startedAt = undefined;
+    request._currentTime = undefined;
     
+    response._startedAt = undefined;
+    response._currentTime = undefined;
+
     initializeTimer.call(request);
 
     function log() { 
