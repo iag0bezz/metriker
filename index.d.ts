@@ -7,6 +7,10 @@ declare namespace metriker {
     (options?: Options<Request, Response>): Handler<Request, Response>;
   }
 
+  interface StreamOptions {
+    write(str: string): void;
+  }
+
   interface Options<Request extends http.IncomingMessage, Response extends http.ServerResponse> {
     format?: string | undefined;
     blacklist?: string[];
