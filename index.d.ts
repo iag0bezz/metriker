@@ -19,4 +19,8 @@ declare namespace metriker {
   }
 }
 
+declare function metriker<Request extends http.IncomingMessage = http.IncomingMessage, Response extends http.ServerResponse = http.ServerResponse>(
+  options?: metriker.Options<Request, Response>
+): Handler<Request, Response>;
+
 export = metriker;
