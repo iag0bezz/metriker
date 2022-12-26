@@ -28,9 +28,6 @@ const MAPPER = {
       return;
     }
 
-    var ms = (res._startAt[0] - req._startAt[0]) * 1e3 +
-      (res._startAt[1] - req._startAt[1]) * 1e-6
-
     const difference = 
       (response._startedAt[0] - request._startedAt[0]) * 1e3 +
       (response._startedAt[1] - request._startedAt[1]) * 1e-6
