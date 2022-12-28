@@ -14,13 +14,13 @@ const onHeaders = require('on-headers');
 const onFinished = require('on-finished');
 
 const MAPPER = {
-  ':url': function getOriginalUrl (request, response) {
+  ':url': function getOriginalUrl (request, _) {
     return request.originalUrl || request.url;
   },
-  ':method': function getHttpMethod (request, response) {
+  ':method': function getHttpMethod (request, _) {
     return request.method;
   },
-  ':status': function getHttpStatus (request, response) {
+  ':status': function getHttpStatus (_, response) {
     return String(response.statusCode);
   },
   ':response-time': function getResponseTime (request, response) {
@@ -34,7 +34,7 @@ const MAPPER = {
                                                                                                        
     return difference.toFixed(3);
   },
-  ':total-time': function getTotalTime (request, response) {
+  ':total-time': function getTotalTime (request, _) {
     if (!request._startedAt || !request._currentTime) {
       return;
     }
@@ -45,22 +45,21 @@ const MAPPER = {
 
     return difference.toFixed(3);
   },
-  ':http-version': function getHttpVersion (request, response) {
-    return request.httpVersionMajor + '.' + request.httpVersionMinio
+  ':http-version': function getHttpVersion (request, _) {
+    return request.httpVersionMajor + '.' + request.httpVersionMinor;
   },
-  ':referrer': function getReferrer (request, response) {
+  ':referrer': function getReferrer (request, _) {
     return request.headers.referer || request.headers.referrer;
   },
-  ':remote-addr': function getRemoteAddr (request, response) {
+  ':remote-addr': function getRemoteAddr (request, _) {
     return request.ip ||
       request._remoteAddress ||
       (request.connection && request.connection.remoteAddress) ||
       undefined
   },
-  ':user-agent': function getUserAgent (request, response) {
+  ':user-agent': function getUserAgent (request, _) {
     return request.headers['user-agent'];
   },
-  // I need to refactor this section
   ':res': function getResponse (request, response) {
     const request_header = request._request_header;
 
@@ -76,24 +75,24 @@ const MAPPER = {
 
     return Array.isArray(header) ? header.join(',') : header
   },
-  ':req': function getRequest (request, response) {
+  ':req': function getRequest (request, _) {
     const request_header = request._request_header;
 
     if (!request_header) {
       return;
     }
 
-    const header = request.getHeader(request_header);
+    const header = request.headers[request_header] ?? request[request_header];
 
     if (!header) {
       return '';
     }
 
-    return Array.isArray(header) ? header.join(',') : header
+    return Array.isArray(header) ? header.join(',') : JSON.stringify(header);
   }
 }
 
-const DEFAULT_FORMAT = ':method :url :status :res[content-length] - :response-time ms';
+const DEFAULT_FORMAT = ':method :url :status :req[body] - :response-time ms';
 const DEFAULT_BLACKLIST = ['/favicon.ico']
 
 /**
@@ -162,7 +161,7 @@ function parseRequest (value, request) {
     const fn = MAPPER[`:${exec[1]}`];
 
     if (exec[2] !== undefined) {
-      request._request_header = exec[2];
+      request._request_header = exec[2].toLowerCase();
     }
 
     return [value, fn];
